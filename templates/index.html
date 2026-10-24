@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="5"><title>MachineWatch | Equipment Pulse</title>
+<style>
+:root{--bg:#101720;--panel:#182431;--line:#2b3a49;--text:#edf3f8;--muted:#9aabba;--accent:#ffb547;--good:#53d69a;--bad:#ff7474}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 85% 0,#263747 0,transparent 36%),var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,sans-serif}
+header{padding:28px max(20px,calc((100% - 1120px)/2));border-bottom:1px solid var(--line);background:#121c27dd}
+.brand{font-size:.78rem;letter-spacing:.18em;color:var(--accent);font-weight:800;text-transform:uppercase}h1{margin:8px 0;font-size:clamp(1.8rem,4vw,2.8rem)}header p,.muted{color:var(--muted);margin:0}
+main{max-width:1120px;margin:26px auto;padding:0 18px 36px}.topline{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.badge{border:1px solid var(--line);border-radius:99px;padding:7px 12px;color:var(--muted);font-size:.85rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:14px}.card{background:linear-gradient(145deg,#1b2a38,#17222d);border:1px solid var(--line);border-radius:15px;padding:19px;min-width:0}
+.label{color:var(--muted);font-size:.9rem}.value{font-size:clamp(1.65rem,3vw,2.25rem);font-weight:750;margin:14px 0 10px;overflow-wrap:anywhere}.unit{font-size:.95rem;color:var(--muted);font-weight:500}
+.state{display:inline-block;padding:5px 9px;border-radius:6px;background:#203e34;color:var(--good);font-size:.8rem;font-weight:700}.warn{background:#4a3421;color:var(--accent)}.danger{background:#4a272b;color:var(--bad)}
+h2{margin:28px 0 12px;font-size:1.15rem}.empty{border:1px dashed #506071;border-radius:14px;padding:22px;color:var(--muted);background:#17222d}
+.alert{border-left:3px solid var(--accent)}footer{margin-top:28px;color:var(--muted);font-size:.84rem;line-height:1.6}
+</style></head><body>
+<header><div class="brand">MachineWatch / Industrial IoT</div><h1>Equipment Pulse</h1><p>Factory sensor console · live telemetry refreshes every 5 seconds</p></header>
+<main><div class="topline"><div><strong>Asset:</strong> factory-node01 <span class="muted">· ESP32 sensor node</span></div><div class="badge">Local MQTT monitoring</div></div>
+<h2>Live operating conditions</h2>
+{% if state.telemetry %}{% set f=state.telemetry.data %}
+<div class="grid">
+<div class="card"><div class="label">Ambient temperature</div><div class="value">{{ f.get('temperature','—') }} <span class="unit">°C</span></div><span class="state {{ 'warn' if f.get('temperature',0)|float >= 40 else '' }}">{{ 'Temperature threshold exceeded' if f.get('temperature',0)|float >= 40 else 'Within configured limit' }}</span></div>
+<div class="card"><div class="label">Relative humidity</div><div class="value">{{ f.get('humidity','—') }} <span class="unit">%</span></div><span class="state">DHT11 sensor</span></div>
+<div class="card"><div class="label">Vibration input</div><div class="value">{{ 'ACTIVE' if f.get('vibration') else 'IDLE' }}</div><span class="state {{ 'warn' if f.get('vibration') else '' }}">{{ 'Inspect machine / sensor polarity' if f.get('vibration') else 'No vibration signal' }}</span></div>
+<div class="card"><div class="label">IR object sensor</div><div class="value">{{ 'OBJECT' if f.get('object_detected') else 'CLEAR' }}</div><span class="state {{ 'warn' if f.get('object_detected') else '' }}">Digital input status</span></div>
+</div><p class="muted" style="margin-top:12px;font-size:.82rem">Last packet: {{ state.telemetry.time }}</p>
+{% else %}<div class="empty">No factory packet received yet. Confirm the ESP32 is online and publishing to internship/factory/node01/telemetry.</div>{% endif %}
+<h2>Maintenance event feed</h2>
+{% if state.alerts %}<div class="grid">{% for a in state.alerts %}<div class="card alert"><span class="state warn">Attention</span><p>{{ a.message }}</p><div class="muted" style="font-size:.8rem">{{ a.time }}</div></div>{% endfor %}</div>
+{% else %}<div class="empty">No alert messages received in this session.</div>{% endif %}
+<footer>Prototype monitoring only. Vibration and temperature flags are rule-based indicators, not a validated predictive-maintenance diagnosis. Verify sensor polarity and thresholds before interpreting machine condition.</footer>
+</main></body></html>
