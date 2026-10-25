@@ -59,4 +59,4 @@ def mqtt_worker():
         client.connect(HOST, PORT, 45)
         client.loop_forever()
     except Exception as exc:
-        print(f"MQTT worker error: {type(exc).__name__}: {exc}", flush=True).0", port=int(os.environ.get("PORT", "5000")), debug=False)
+        print(f"MQTT worker error: {type(exc).__name__}: {exc}", flush=True)
