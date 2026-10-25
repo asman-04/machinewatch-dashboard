@@ -33,31 +33,30 @@ def on_message(client, userdata, msg):
             latest["telemetry"] = {"time": now, "data": data}
 
 def mqtt_worker():
-    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="factory-dashboard")
-    if USERNAME: client.username_pw_set(USERNAME, PASSWORD)
-    if TLS: client.tls_set()
-    client.on_connect, client.on_message = on_connect, on_message
+    client = mqtt.Client(
+        mqtt.CallbackAPIVersion.VERSION2,
+        client_id="factory-dashboard"
+    )
+
+    if USERNAME:
+        client.username_pw_set(USERNAME, PASSWORD)
+
+    if TLS:
+        client.tls_set()
+
+    client.on_connect = on_connect
+    client.on_message = on_message
+
+    client.on_disconnect = lambda client, userdata, disconnect_flags, reason_code, properties: print(
+        f"MQTT disconnected: {reason_code}", flush=True
+    )
+
     try:
+        print(
+            f"Connecting to MQTT broker {HOST}:{PORT}; TLS={TLS}",
+            flush=True
+        )
         client.connect(HOST, PORT, 45)
-        client.loop_start()
+        client.loop_forever()
     except Exception as exc:
-        print(f"Could not connect to MQTT at {HOST}:{PORT}: {exc}")
-
-if os.environ.get("DISABLE_MQTT", "false").lower() != "true":
-    threading.Thread(target=mqtt_worker, daemon=True).start()
-
-@app.route("/")
-def index():
-    with lock: snapshot = json.loads(json.dumps(latest))
-    return render_template("index.html", state=snapshot)
-
-@app.route("/api/latest")
-def api_latest():
-    with lock: return jsonify(latest)
-
-@app.route("/health")
-def health():
-    return jsonify({"status": "ok", "project": "factory", "mqtt_host": HOST, "mqtt_port": PORT})
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")), debug=False)
+        print(f"MQTT worker error: {type(exc).__name__}: {exc}", flush=True).0", port=int(os.environ.get("PORT", "5000")), debug=False)
