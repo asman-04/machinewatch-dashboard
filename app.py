@@ -60,3 +60,37 @@ def mqtt_worker():
         client.loop_forever()
     except Exception as exc:
         print(f"MQTT worker error: {type(exc).__name__}: {exc}", flush=True)
+
+if os.environ.get("DISABLE_MQTT", "false").lower() != "true":
+    threading.Thread(target=mqtt_worker, daemon=True).start()
+
+
+@app.route("/")
+def index():
+    with lock:
+        snapshot = json.loads(json.dumps(latest))
+    return render_template("index.html", state=snapshot)
+
+
+@app.route("/api/latest")
+def api_latest():
+    with lock:
+        return jsonify(latest)
+
+
+@app.route("/health")
+def health():
+    return jsonify({
+        "status": "ok",
+        "project": "factory",
+        "mqtt_host": HOST,
+        "mqtt_port": PORT
+    })
+
+
+if __name__ == "__main__":
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", "5000")),
+        debug=False
+    )
